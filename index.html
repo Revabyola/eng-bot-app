@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>English Bot</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка с информацией о пользователе -->
+        <div class="header">
+            <h1>🇬🇧 English Bot</h1>
+            <div id="user-info">Загрузка...</div>
+        </div>
+        
+        <!-- Основной контент -->
+        <div class="content" id="content">
+            <!-- Здесь будет отображаться разное содержимое -->
+            <div class="loading">Загрузка...</div>
+        </div>
+        
+        <!-- Нижнее меню навигации -->
+        <div class="bottom-nav">
+            <button class="nav-btn active" data-page="learn">📚 Учить</button>
+            <button class="nav-btn" data-page="add">➕ Добавить</button>
+            <button class="nav-btn" data-page="list">📋 Словарь</button>
+            <button class="nav-btn" data-page="test">📝 Тест</button>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
