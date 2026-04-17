@@ -60,40 +60,38 @@ navButtons.forEach(btn => {
     });
 });
 
-// ========== ПРОКРУТКА К НИЖНЕМУ МЕНЮ (ГАРАНТИРОВАННО ВНИЗ) ==========
+// ========== ПРОКРУТКА СТРОГО ВНИЗ К НИЖНЕМУ МЕНЮ ==========
 function scrollToTabs() {
-    // Находим нижнее меню
     const bottomNav = document.querySelector('.bottom-nav');
     
     if (bottomNav) {
-        // Получаем позицию меню относительно документа
+        // Прямой скролл к нижнему меню
         const rect = bottomNav.getBoundingClientRect();
-        const absoluteTop = rect.top + window.scrollY;
+        const scrollY = window.scrollY;
         
-        // Скроллим так, чтобы меню оказалось внизу видимой области
-        const targetY = absoluteTop - window.innerHeight + rect.height + 20;
+        // Позиция меню минус высота экрана + высота меню = меню внизу
+        const targetY = rect.top + scrollY - window.innerHeight + rect.height + 10;
         
         window.scrollTo({
             top: targetY,
             behavior: 'smooth'
         });
     } else {
-        // Если меню нет - скроллим в самый конец страницы
+        // Если меню нет - скроллим в самый низ
         window.scrollTo({
-            top: document.body.scrollHeight,
+            top: document.documentElement.scrollHeight,
             behavior: 'smooth'
         });
     }
 }
 
-// Показываем/скрываем кнопку прокрутки
+// Показываем кнопку при прокрутке вниз
 window.addEventListener('scroll', () => {
     const btn = document.getElementById('scrollToTabs');
     if (!btn) return;
     
-    // Показываем кнопку, если прокрутили больше 300px и есть вкладки
-    const tabs = document.querySelector('.tabs');
-    if (tabs && window.scrollY > 300) {
+    // Показываем кнопку, если прокрутили больше 200px
+    if (window.scrollY > 200) {
         btn.classList.add('show');
     } else {
         btn.classList.remove('show');
