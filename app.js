@@ -60,32 +60,19 @@ navButtons.forEach(btn => {
     });
 });
 
-// ========== ПРОКРУТКА К ВКЛАДКАМ (РАБОЧАЯ ВЕРСИЯ) ==========
+// ========== ПРОКРУТКА К НИЖНЕМУ МЕНЮ ==========
 function scrollToTabs() {
-    // Ищем вкладки
-    const tabs = document.querySelector('.tabs');
+    const bottomNav = document.querySelector('.bottom-nav');
     
-    if (tabs) {
-        // Получаем позицию элемента
-        const rect = tabs.getBoundingClientRect();
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Целевая позиция: верх вкладок минус 20px (чтобы не прилипало вплотную)
-        const targetY = rect.top + scrollTop - 20;
-        
-        // Плавно скроллим
-        window.scrollTo({
-            top: targetY,
-            behavior: 'smooth'
-        });
+    if (bottomNav) {
+        // Скроллим к нижнему меню
+        bottomNav.scrollIntoView({ behavior: 'smooth', block: 'end' });
     } else {
-        // Если вкладок нет - скроллим в конец контента
-        const contentElement = document.querySelector('.content');
-        if (contentElement) {
-            contentElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        } else {
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
+        // Если меню нет — скроллим в самый низ
+        window.scrollTo({ 
+            top: document.documentElement.scrollHeight, 
+            behavior: 'smooth' 
+        });
     }
 }
 
