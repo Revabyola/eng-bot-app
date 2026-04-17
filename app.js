@@ -61,18 +61,28 @@ navButtons.forEach(btn => {
 });
 
 // ========== ПРОКРУТКА К ВКЛАДКАМ (ВНИЗ) ==========
+// ========== ПРОКРУТКА К ВКЛАДКАМ (ВНИЗ) ==========
 function scrollToTabs() {
     const tabs = document.querySelector('.tabs');
+    
     if (tabs) {
-        // Прокручиваем к вкладкам
-        tabs.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        // Получаем позицию вкладок относительно всей страницы
+        const tabsRect = tabs.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetPosition = tabsRect.top + scrollTop - 100; // Отступ 100px сверху
+        
+        window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+        });
     } else {
-        // Если вкладок нет — прокручиваем в самый низ страницы
-        window.scrollTo({ 
-            top: document.body.scrollHeight, 
-            behavior: 'smooth' 
+        // Если вкладок нет — прокручиваем в самый низ
+        window.scrollTo({
+            top: document.documentElement.scrollHeight,
+            behavior: 'smooth'
         });
     }
+}
     
     // Дополнительно: небольшой отступ, чтобы вкладки были видны
     setTimeout(() => {
