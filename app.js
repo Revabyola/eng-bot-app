@@ -60,25 +60,21 @@ navButtons.forEach(btn => {
     });
 });
 
-// ========== ПРОКРУТКА ВНИЗ (НАДЁЖНЫЙ СПОСОБ) ==========
 function scrollToTabs() {
-    // Просто скроллим вниз на высоту экрана или до конца страницы
-    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const maxScroll = document.documentElement.scrollHeight - windowHeight;
+    const tabs = document.querySelector('.tabs');
     
-    // Скроллим вниз на 80% высоты экрана, но не дальше конца страницы
-    const targetScroll = Math.min(currentScroll + windowHeight * 0.8, maxScroll);
-    
-    window.scrollTo({
-        top: targetScroll,
-        behavior: 'smooth'
-    });
-    
-    // Дополнительно: небольшой отступ, чтобы вкладки были видны
-    setTimeout(() => {
-        window.scrollBy({ top: 100, behavior: 'smooth' });
-    }, 300);
+    if (tabs) {
+        // Принудительно вычисляем позицию элемента
+        const rect = tabs.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetY = rect.top + scrollTop - 150; // Отступ сверху 150px
+        
+        console.log('Scrolling to:', targetY); // Для отладки
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
+    } else {
+        // Если вкладок нет — в самый низ
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
 }
 
 window.addEventListener('scroll', () => {
