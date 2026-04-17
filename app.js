@@ -56,7 +56,29 @@ navButtons.forEach(btn => {
         const page = btn.dataset.page;
         setActiveTab(page);
         loadPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+});
+
+// ========== ПРОКРУТКА К ВКЛАДКАМ ==========
+function scrollToTabs() {
+    const tabs = document.querySelector('.tabs');
+    if (tabs) {
+        tabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+}
+
+window.addEventListener('scroll', () => {
+    const btn = document.getElementById('scrollToTabs');
+    if (!btn) return;
+    
+    if (window.scrollY > 200) {
+        btn.classList.add('show');
+    } else {
+        btn.classList.remove('show');
+    }
 });
 
 // ========== ЗАГРУЗКА СТРАНИЦ ==========
@@ -426,7 +448,6 @@ function showTestQuestion() {
         const correct = currentTest.correct;
         const accuracy = total > 0 ? Math.round(correct / total * 100) : 0;
         
-        // Сохраняем результат
         lastTestResult = {
             type: currentTest.type === 'en_ru' ? 'EN→RU' : currentTest.type === 'ru_en' ? 'RU→EN' : currentTest.type === 'phrasal' ? 'Фразовые' : 'Общий',
             correct, total, accuracy,
