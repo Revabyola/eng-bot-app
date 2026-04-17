@@ -60,14 +60,24 @@ navButtons.forEach(btn => {
     });
 });
 
-// ========== ПРОКРУТКА К ВКЛАДКАМ ==========
+// ========== ПРОКРУТКА К ВКЛАДКАМ (ВНИЗ) ==========
 function scrollToTabs() {
     const tabs = document.querySelector('.tabs');
     if (tabs) {
-        tabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Прокручиваем к вкладкам
+        tabs.scrollIntoView({ behavior: 'smooth', block: 'end' });
     } else {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        // Если вкладок нет — прокручиваем в самый низ страницы
+        window.scrollTo({ 
+            top: document.body.scrollHeight, 
+            behavior: 'smooth' 
+        });
     }
+    
+    // Дополнительно: небольшой отступ, чтобы вкладки были видны
+    setTimeout(() => {
+        window.scrollBy({ top: 100, behavior: 'smooth' });
+    }, 300);
 }
 
 window.addEventListener('scroll', () => {
