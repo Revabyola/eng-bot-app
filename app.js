@@ -56,32 +56,47 @@ navButtons.forEach(btn => {
         const page = btn.dataset.page;
         setActiveTab(page);
         loadPage(page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'instant' });
     });
 });
 
+// ========== ПРОКРУТКА К ВКЛАДКАМ (РАБОЧАЯ ВЕРСИЯ) ==========
 function scrollToTabs() {
+    // Ищем вкладки
     const tabs = document.querySelector('.tabs');
     
     if (tabs) {
-        // Принудительно вычисляем позицию элемента
+        // Получаем позицию элемента
         const rect = tabs.getBoundingClientRect();
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const targetY = rect.top + scrollTop - 150; // Отступ сверху 150px
         
-        console.log('Scrolling to:', targetY); // Для отладки
-        window.scrollTo({ top: targetY, behavior: 'smooth' });
+        // Целевая позиция: верх вкладок минус 20px (чтобы не прилипало вплотную)
+        const targetY = rect.top + scrollTop - 20;
+        
+        // Плавно скроллим
+        window.scrollTo({
+            top: targetY,
+            behavior: 'smooth'
+        });
     } else {
-        // Если вкладок нет — в самый низ
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        // Если вкладок нет - скроллим в конец контента
+        const contentElement = document.querySelector('.content');
+        if (contentElement) {
+            contentElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
     }
 }
 
+// Показываем/скрываем кнопку прокрутки
 window.addEventListener('scroll', () => {
     const btn = document.getElementById('scrollToTabs');
     if (!btn) return;
     
-    if (window.scrollY > 200) {
+    // Показываем кнопку, если прокрутили больше 300px и есть вкладки
+    const tabs = document.querySelector('.tabs');
+    if (tabs && window.scrollY > 300) {
         btn.classList.add('show');
     } else {
         btn.classList.remove('show');
