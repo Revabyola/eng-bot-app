@@ -60,18 +60,28 @@ navButtons.forEach(btn => {
     });
 });
 
-// ========== ПРОКРУТКА К НИЖНЕМУ МЕНЮ ==========
+// ========== ПРОКРУТКА К НИЖНЕМУ МЕНЮ (ГАРАНТИРОВАННО ВНИЗ) ==========
 function scrollToTabs() {
+    // Находим нижнее меню
     const bottomNav = document.querySelector('.bottom-nav');
     
     if (bottomNav) {
-        // Скроллим к нижнему меню
-        bottomNav.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        // Получаем позицию меню относительно документа
+        const rect = bottomNav.getBoundingClientRect();
+        const absoluteTop = rect.top + window.scrollY;
+        
+        // Скроллим так, чтобы меню оказалось внизу видимой области
+        const targetY = absoluteTop - window.innerHeight + rect.height + 20;
+        
+        window.scrollTo({
+            top: targetY,
+            behavior: 'smooth'
+        });
     } else {
-        // Если меню нет — скроллим в самый низ
-        window.scrollTo({ 
-            top: document.documentElement.scrollHeight, 
-            behavior: 'smooth' 
+        // Если меню нет - скроллим в самый конец страницы
+        window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth'
         });
     }
 }
