@@ -60,16 +60,21 @@ navButtons.forEach(btn => {
     });
 });
 
-// ========== ПРОКРУТКА СТРОГО ВНИЗ К НИЖНЕМУ МЕНЮ ==========
-function scrollToTabs() {
+// ========== ПРОКРУТКА ВВЕРХ ==========
+function scrollToTop() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
+
+// ========== ПРОКРУТКА ВНИЗ К МЕНЮ ==========
+function scrollToBottom() {
     const bottomNav = document.querySelector('.bottom-nav');
     
     if (bottomNav) {
-        // Прямой скролл к нижнему меню
         const rect = bottomNav.getBoundingClientRect();
         const scrollY = window.scrollY;
-        
-        // Позиция меню минус высота экрана + высота меню = меню внизу
         const targetY = rect.top + scrollY - window.innerHeight + rect.height + 10;
         
         window.scrollTo({
@@ -77,7 +82,6 @@ function scrollToTabs() {
             behavior: 'smooth'
         });
     } else {
-        // Если меню нет - скроллим в самый низ
         window.scrollTo({
             top: document.documentElement.scrollHeight,
             behavior: 'smooth'
@@ -85,16 +89,25 @@ function scrollToTabs() {
     }
 }
 
-// Показываем кнопку при прокрутке вниз
+// Показываем/скрываем кнопки при прокрутке
 window.addEventListener('scroll', () => {
-    const btn = document.getElementById('scrollToTabs');
-    if (!btn) return;
+    const btnTop = document.getElementById('scrollToTop');
+    const btnBottom = document.getElementById('scrollToBottom');
     
-    // Показываем кнопку, если прокрутили больше 200px
-    if (window.scrollY > 200) {
-        btn.classList.add('show');
-    } else {
-        btn.classList.remove('show');
+    if (btnTop) {
+        if (window.scrollY > 300) {
+            btnTop.classList.add('show');
+        } else {
+            btnTop.classList.remove('show');
+        }
+    }
+    
+    if (btnBottom) {
+        if (window.scrollY > 200) {
+            btnBottom.classList.add('show');
+        } else {
+            btnBottom.classList.remove('show');
+        }
     }
 });
 
