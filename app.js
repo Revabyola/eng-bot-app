@@ -27,6 +27,8 @@ if (initDataUnsafe.user) {
 }
 
 // Глобальные переменные
+let allFolders = [];
+let currentFolderId = null;
 let allWords = [];
 let allPhrasalVerbs = [];
 let dictionaryTab = 'words';
@@ -60,64 +62,50 @@ navButtons.forEach(btn => {
     });
 });
 
-// ========== ПРОКРУТКА ВВЕРХ ==========
+// ========== ПРОКРУТКА ==========
 function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ========== ПРОКРУТКА ВНИЗ К МЕНЮ ==========
 function scrollToBottom() {
     const bottomNav = document.querySelector('.bottom-nav');
-    
     if (bottomNav) {
         const rect = bottomNav.getBoundingClientRect();
         const scrollY = window.scrollY;
         const targetY = rect.top + scrollY - window.innerHeight + rect.height + 10;
-        
-        window.scrollTo({
-            top: targetY,
-            behavior: 'smooth'
-        });
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
     } else {
-        window.scrollTo({
-            top: document.documentElement.scrollHeight,
-            behavior: 'smooth'
-        });
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
     }
 }
 
-// Показываем/скрываем кнопки при прокрутке
 window.addEventListener('scroll', () => {
     const btnTop = document.getElementById('scrollToTop');
     const btnBottom = document.getElementById('scrollToBottom');
-    
-    if (btnTop) {
-        if (window.scrollY > 300) {
-            btnTop.classList.add('show');
-        } else {
-            btnTop.classList.remove('show');
-        }
-    }
-    
-    if (btnBottom) {
-        if (window.scrollY > 200) {
-            btnBottom.classList.add('show');
-        } else {
-            btnBottom.classList.remove('show');
-        }
-    }
+    if (btnTop) btnTop.classList.toggle('show', window.scrollY > 300);
+    if (btnBottom) btnBottom.classList.toggle('show', window.scrollY > 200);
 });
 
+// ========== ЗАГРУЗКА ПАПОК ==========
+async function loadFolders() {
+    try {
+        const response = await fetch(`${API_URL}/api/folders?user_id=${userId}`);
+        const data = await response.json();
+        allFolders = data.folders || [];
+    } catch (error) {
+        console.error('Ошибка загрузки папок:', error);
+    }
+}
+
 // ========== ЗАГРУЗКА СТРАНИЦ ==========
-function loadPage(page) {
+async function loadPage(page) {
+    await loadFolders();
     switch(page) {
         case 'dictionary': loadDictionary(); break;
         case 'add': showAddPage(); break;
         case 'test': showTestMenu(); break;
         case 'stats': showStats(); break;
+        case 'folders': showFoldersPage(); break;
     }
 }
 
@@ -125,8 +113,13 @@ function loadPage(page) {
 async function loadDictionary() {
     content.innerHTML = '<div class="loading"></div>';
     
+    let url = `${API_URL}/api/words?user_id=${userId}`;
+    if (currentFolderId) {
+        url += `&folder_id=${currentFolderId}`;
+    }
+    
     try {
-        const response = await fetch(`${API_URL}/api/get_all_words?user_id=${userId}`);
+        const response = await fetch(url);
         const data = await response.json();
         allWords = data.words || [];
         allPhrasalVerbs = data.phrasal_verbs || [];
@@ -137,8 +130,16 @@ async function loadDictionary() {
 }
 
 function renderDictionary() {
+    const currentFolder = allFolders.find(f => f.id == currentFolderId);
+    const folderName = currentFolder ? currentFolder.name : 'Все слова';
+    
     let html = `
-        <h2>📚 Мой словарь</h2>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <h2 style="margin: 0;">📚 ${folderName}</h2>
+            <button class="button secondary small" style="width: auto; margin: 0;" onclick="showFolderSelector()">
+                📁 ${currentFolder ? 'Сменить' : 'Выбрать папку'}
+            </button>
+        </div>
         <div class="tabs">
             <button class="tab ${dictionaryTab === 'words' ? 'active' : ''}" onclick="switchDictionaryTab('words')">
                 Слова · ${allWords.length}
@@ -166,12 +167,13 @@ function renderDictionaryContent() {
     
     if (dictionaryTab === 'words') {
         if (allWords.length === 0) {
-            container.innerHTML = '<div class="empty-state">Нет слов. Добавь первое!</div>';
+            container.innerHTML = '<div class="empty-state">Нет слов в этой папке</div>';
             return;
         }
         
         let html = '';
         allWords.forEach(word => {
+            const folder = allFolders.find(f => f.id == word.folder_id);
             html += `
                 <div class="word-card">
                     <div class="word-header">
@@ -180,9 +182,15 @@ function renderDictionaryContent() {
                     </div>
                     <div class="russian">${word.russian}</div>
                     ${word.comment ? `<div class="comment">💬 ${word.comment}</div>` : ''}
-                    <button class="button secondary small" style="margin-top:12px;" onclick="showAddComment(${word.id}, '${word.english.replace(/'/g, "\\'")}')">
-                        ${word.comment ? '✏️ Изменить' : '➕ Добавить'} комментарий
-                    </button>
+                    ${folder ? `<div style="font-size:12px; color: #8e8e93; margin-top:8px;">📁 ${folder.name}</div>` : ''}
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="button secondary small" style="flex:1;" onclick="showAddComment(${word.id}, '${word.english.replace(/'/g, "\\'")}')">
+                            ${word.comment ? '✏️' : '➕'} Комментарий
+                        </button>
+                        <button class="button secondary small" style="flex:1;" onclick="showMoveWordMenu(${word.id}, '${word.english.replace(/'/g, "\\'")}')">
+                            📁 Переместить
+                        </button>
+                    </div>
                 </div>
             `;
         });
@@ -195,6 +203,7 @@ function renderDictionaryContent() {
         
         let html = '';
         allPhrasalVerbs.forEach(verb => {
+            const folder = allFolders.find(f => f.id == verb.folder_id);
             html += `
                 <div class="word-card">
                     <div class="word-header">
@@ -202,6 +211,10 @@ function renderDictionaryContent() {
                         <button class="delete-btn" onclick="deletePhrasal(${verb.id})">🗑️</button>
                     </div>
                     <div class="russian">${verb.russian}</div>
+                    ${folder ? `<div style="font-size:12px; color: #8e8e93; margin-top:8px;">📁 ${folder.name}</div>` : ''}
+                    <button class="button secondary small" style="margin-top:12px; width:100%;" onclick="showMovePhrasalMenu(${verb.id})">
+                        📁 Переместить
+                    </button>
                 </div>
             `;
         });
@@ -209,45 +222,187 @@ function renderDictionaryContent() {
     }
 }
 
-async function deleteWord(wordId) {
-    if (!confirm('Удалить слово?')) return;
-    await fetch(`${API_URL}/api/delete_word`, {
+// ========== ВЫБОР ПАПКИ ==========
+function showFolderSelector() {
+    let html = `
+        <h2>📁 Выбери папку</h2>
+        <button class="button secondary" onclick="selectFolder(null)">📚 Все слова</button>
+    `;
+    
+    allFolders.forEach(folder => {
+        html += `<button class="button secondary" onclick="selectFolder(${folder.id})">📁 ${folder.name}</button>`;
+    });
+    
+    html += `
+        <div style="margin-top: 20px;">
+            <button class="button" onclick="showCreateFolderForm()">➕ Создать новую папку</button>
+            <button class="button secondary" onclick="loadDictionary()">🔙 Назад</button>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+}
+
+function selectFolder(folderId) {
+    currentFolderId = folderId;
+    loadDictionary();
+}
+
+function showCreateFolderForm() {
+    content.innerHTML = `
+        <h2>➕ Новая папка</h2>
+        <div class="input-group">
+            <label>Название папки</label>
+            <input type="text" id="folder-name" placeholder="Например: Путешествия" autocomplete="off" autofocus>
+        </div>
+        <button class="button" onclick="createFolder()">✅ Создать</button>
+        <button class="button secondary" onclick="showFolderSelector()">🔙 Назад</button>
+    `;
+}
+
+async function createFolder() {
+    const name = document.getElementById('folder-name')?.value.trim();
+    if (!name) { alert('Введи название'); return; }
+    
+    const res = await fetch(`${API_URL}/api/folders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word_id: wordId, user_id: userId })
+        body: JSON.stringify({ name, user_id: userId })
     });
-    allWords = allWords.filter(w => w.id !== wordId);
-    renderDictionary();
+    const data = await res.json();
+    if (data.success) {
+        alert(`✅ Папка "${name}" создана!`);
+        await loadFolders();
+        showFolderSelector();
+    } else {
+        alert('❌ Ошибка создания');
+    }
+}
+
+async function showMoveWordMenu(wordId, english) {
+    if (allFolders.length === 0) {
+        alert('Сначала создайте папку');
+        return;
+    }
+    
+    let html = `
+        <h2>📁 Переместить "${english}"</h2>
+        <button class="button secondary" onclick="moveWord(${wordId}, null)">📚 Без папки</button>
+    `;
+    
+    allFolders.forEach(folder => {
+        html += `<button class="button secondary" onclick="moveWord(${wordId}, ${folder.id})">📁 ${folder.name}</button>`;
+    });
+    
+    html += `<button class="button secondary" onclick="loadDictionary()">🔙 Отмена</button>`;
+    content.innerHTML = html;
+}
+
+async function moveWord(wordId, folderId) {
+    await fetch(`${API_URL}/api/words/${wordId}/move`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_id: folderId, user_id: userId })
+    });
+    loadDictionary();
+}
+
+async function showMovePhrasalMenu(verbId) {
+    if (allFolders.length === 0) {
+        alert('Сначала создайте папку');
+        return;
+    }
+    
+    let html = `
+        <h2>📁 Переместить глагол</h2>
+        <button class="button secondary" onclick="movePhrasal(${verbId}, null)">📚 Без папки</button>
+    `;
+    
+    allFolders.forEach(folder => {
+        html += `<button class="button secondary" onclick="movePhrasal(${verbId}, ${folder.id})">📁 ${folder.name}</button>`;
+    });
+    
+    html += `<button class="button secondary" onclick="loadDictionary()">🔙 Отмена</button>`;
+    content.innerHTML = html;
+}
+
+async function movePhrasal(verbId, folderId) {
+    await fetch(`${API_URL}/api/phrasal/${verbId}/move`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder_id: folderId, user_id: userId })
+    });
+    loadDictionary();
+}
+
+// ========== УДАЛЕНИЕ ==========
+async function deleteWord(wordId) {
+    if (!confirm('Удалить слово?')) return;
+    await fetch(`${API_URL}/api/words/${wordId}?user_id=${userId}`, { method: 'DELETE' });
+    loadDictionary();
 }
 
 async function deletePhrasal(verbId) {
     if (!confirm('Удалить фразовый глагол?')) return;
-    await fetch(`${API_URL}/api/delete_phrasal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verb_id: verbId, user_id: userId })
-    });
-    allPhrasalVerbs = allPhrasalVerbs.filter(v => v.id !== verbId);
-    renderDictionary();
+    await fetch(`${API_URL}/api/phrasal/${verbId}?user_id=${userId}`, { method: 'DELETE' });
+    loadDictionary();
 }
 
+// ========== КОММЕНТАРИИ ==========
 function showAddComment(wordId, english) {
     const comment = prompt(`Комментарий к слову "${english}":`);
     if (comment === null) return;
     
-    fetch(`${API_URL}/api/update_comment`, {
-        method: 'POST',
+    fetch(`${API_URL}/api/words/${wordId}/comment`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word_id: wordId, comment, user_id: userId })
-    }).then(() => {
-        const word = allWords.find(w => w.id === wordId);
-        if (word) word.comment = comment;
-        renderDictionaryContent();
-    });
+        body: JSON.stringify({ comment, user_id: userId })
+    }).then(() => loadDictionary());
+}
+
+// ========== УПРАВЛЕНИЕ ПАПКАМИ ==========
+function showFoldersPage() {
+    let html = `
+        <h2>📁 Управление папками</h2>
+        <button class="button" onclick="showCreateFolderForm()">➕ Создать папку</button>
+        <div style="margin-top: 20px;">
+    `;
+    
+    if (allFolders.length === 0) {
+        html += '<div class="empty-state">Нет папок. Создайте первую!</div>';
+    } else {
+        allFolders.forEach(folder => {
+            html += `
+                <div class="word-card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>📁 ${folder.name}</span>
+                    <button class="delete-btn" onclick="deleteFolder(${folder.id})">🗑️</button>
+                </div>
+            `;
+        });
+    }
+    
+    html += `</div><button class="button secondary" onclick="loadDictionary()">🔙 В словарь</button>`;
+    content.innerHTML = html;
+}
+
+async function deleteFolder(folderId) {
+    if (!confirm('Удалить папку? Все слова в ней останутся, но будут без папки.')) return;
+    await fetch(`${API_URL}/api/folders/${folderId}?user_id=${userId}`, { method: 'DELETE' });
+    await loadFolders();
+    showFoldersPage();
 }
 
 // ========== ДОБАВЛЕНИЕ ==========
 function showAddPage() {
+    let folderSelect = `
+        <div class="input-group">
+            <label>📁 Папка</label>
+            <select id="add-folder" style="width:100%; padding:16px; border-radius:16px; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color); border:1.5px solid rgba(0,0,0,0.08);">
+                <option value="">Без папки</option>
+    `;
+    allFolders.forEach(f => folderSelect += `<option value="${f.id}">${f.name}</option>`);
+    folderSelect += `</select></div>`;
+    
     content.innerHTML = `
         <h2>➕ Добавить</h2>
         <div class="tabs">
@@ -267,12 +422,20 @@ function switchAddTab(type) {
 
 function renderAddForm(type) {
     const container = document.getElementById('add-form');
+    const folderSelect = allFolders.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
     
     if (type === 'word') {
         container.innerHTML = `
             <div class="input-group">
                 <label>🇬🇧 Английское слово</label>
                 <input type="text" id="new-word" placeholder="cat" autocomplete="off" autofocus>
+            </div>
+            <div class="input-group">
+                <label>📁 Папка</label>
+                <select id="word-folder" style="width:100%; padding:16px; border-radius:16px; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color); border:1.5px solid rgba(0,0,0,0.08);">
+                    <option value="">Без папки</option>
+                    ${folderSelect}
+                </select>
             </div>
             <button class="button" onclick="translateAndAdd()">🔄 Перевести</button>
             <div id="translation-area"></div>
@@ -286,6 +449,13 @@ function renderAddForm(type) {
             <div class="input-group">
                 <label>📝 Предлоги и перевод</label>
                 <textarea id="phrasal-data" rows="3" placeholder="after = присматривать, down = презирать"></textarea>
+            </div>
+            <div class="input-group">
+                <label>📁 Папка</label>
+                <select id="phrasal-folder" style="width:100%; padding:16px; border-radius:16px; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color); border:1.5px solid rgba(0,0,0,0.08);">
+                    <option value="">Без папки</option>
+                    ${folderSelect}
+                </select>
             </div>
             <button class="button" onclick="savePhrasal()">💾 Сохранить</button>
         `;
@@ -344,10 +514,12 @@ async function saveCustomWord(english) {
 }
 
 async function sendSaveWord(english, russian, comment) {
-    const res = await fetch(`${API_URL}/api/save_word`, {
+    const folderId = document.getElementById('word-folder')?.value || null;
+    
+    const res = await fetch(`${API_URL}/api/words`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ english, russian, comment, user_id: userId })
+        body: JSON.stringify({ english, russian, comment, folder_id: folderId || null, user_id: userId })
     });
     const data = await res.json();
     if (data.success) {
@@ -361,6 +533,8 @@ async function sendSaveWord(english, russian, comment) {
 async function savePhrasal() {
     const verb = document.getElementById('phrasal-verb')?.value.trim();
     const data = document.getElementById('phrasal-data')?.value.trim();
+    const folderId = document.getElementById('phrasal-folder')?.value || null;
+    
     if (!verb || !data) { alert('Заполни все поля'); return; }
     
     const preps = [], trans = [];
@@ -374,10 +548,10 @@ async function savePhrasal() {
     
     if (preps.length === 0) { alert('Неверный формат'); return; }
     
-    const res = await fetch(`${API_URL}/api/save_phrasal`, {
+    const res = await fetch(`${API_URL}/api/phrasal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verb, prepositions: preps.join(', '), russian: trans.join('; '), user_id: userId })
+        body: JSON.stringify({ verb, prepositions: preps.join(', '), russian: trans.join('; '), folder_id: folderId || null, user_id: userId })
     });
     const result = await res.json();
     if (result.success) {
@@ -404,8 +578,17 @@ function showTestMenu() {
         `;
     }
     
+    const currentFolder = allFolders.find(f => f.id == currentFolderId);
+    
     content.innerHTML = `
         <h2>📝 Тест</h2>
+        <div style="margin-bottom: 20px;">
+            <label>📁 Папка для теста:</label>
+            <select id="test-folder" style="width:100%; padding:16px; border-radius:16px; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color); border:1.5px solid rgba(0,0,0,0.08); margin-top:8px;">
+                <option value="">📚 Все слова</option>
+                ${allFolders.map(f => `<option value="${f.id}" ${f.id == currentFolderId ? 'selected' : ''}>📁 ${f.name}</option>`).join('')}
+            </select>
+        </div>
         ${lastTestHtml}
         <button class="button" onclick="startTest('en_ru')">🇬🇧 Английский → Русский</button>
         <button class="button" onclick="startTest('ru_en')">🇷🇺 Русский → Английский</button>
@@ -415,15 +598,23 @@ function showTestMenu() {
 }
 
 async function startTest(type) {
+    const folderSelect = document.getElementById('test-folder');
+    const folderId = folderSelect?.value || currentFolderId;
+    
     content.innerHTML = '<div class="loading"></div>';
     
     try {
-        const response = await fetch(`${API_URL}/api/get_test_data?user_id=${userId}&type=${type}`);
+        let url = `${API_URL}/api/test?user_id=${userId}&type=${type}`;
+        if (folderId && folderId !== '') {
+            url += `&folder_id=${folderId}`;
+        }
+        
+        const response = await fetch(url);
         const data = await response.json();
         const items = data.items || [];
         
         if (items.length === 0) {
-            content.innerHTML = '<div class="empty-state">Словарь пуст. Добавь слова!</div>';
+            content.innerHTML = '<div class="empty-state">Нет слов в выбранной папке</div>';
             return;
         }
         
@@ -581,9 +772,12 @@ function showStats() {
             <div class="stat-card"><div class="stat-number">${totalPhrasal}</div><div class="stat-label">Фразовых</div></div>
             <div class="stat-card highlight"><div class="stat-number">${totalWords + totalPhrasal}</div><div class="stat-label">Всего</div></div>
             <div class="stat-card"><div class="stat-number">${allWords.filter(w => w.comment).length}</div><div class="stat-label">С коммент.</div></div>
+            <div class="stat-card"><div class="stat-number">${allFolders.length}</div><div class="stat-label">Папок</div></div>
+            <div class="stat-card"><div class="stat-number">${allWords.filter(w => w.folder_id).length}</div><div class="stat-label">В папках</div></div>
         </div>
         ${lastTestHtml}
         <button class="button secondary" style="margin-top:16px;" onclick="setActiveTab('dictionary'); loadDictionary();">📚 Смотреть словарь</button>
+        <button class="button secondary" style="margin-top:8px;" onclick="showFoldersPage()">📁 Управление папками</button>
     `;
 }
 
