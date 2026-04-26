@@ -3,7 +3,7 @@ const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-// Настройка тем
+// Настройка темы
 const isDark = tg.colorScheme === 'dark';
 document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || (isDark ? '#1c1c1e' : '#ffffff'));
 document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor || (isDark ? '#ffffff' : '#1a1a1a'));
@@ -143,11 +143,12 @@ function renderDictionary() {
     let selectionBar = '';
     if (selectionMode && selectedWords.size > 0) {
         selectionBar = `
-            <div style="position: sticky; top: 0; background: var(--tg-theme-button-color, #007aff); color: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+            <div style="position: sticky; top: 0; background: var(--tg-theme-button-color, #007aff); color: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; z-index: 10; flex-wrap: wrap; gap: 8px;">
                 <span>Выбрано: ${selectedWords.size}</span>
-                <div>
+                <div style="display: flex; gap: 8px;">
                     <button class="button small" style="width: auto; margin: 0; background: white; color: #007aff;" onclick="showBulkMoveMenu()">📁 Переместить</button>
-                    <button class="button small" style="width: auto; margin: 0 0 0 8px; background: rgba(255,255,255,0.2); color: white;" onclick="cancelSelection()">✖</button>
+                    <button class="button small" style="width: auto; margin: 0; background: #ff3b30; color: white;" onclick="showBulkDeleteMenu()">🗑 Удалить</button>
+                    <button class="button small" style="width: auto; margin: 0; background: rgba(255,255,255,0.2); color: white;" onclick="cancelSelection()">✖</button>
                 </div>
             </div>
         `;
@@ -206,7 +207,7 @@ function renderDictionaryContent() {
                 <div class="word-card ${isSelected ? 'selected-card' : ''}" style="${isSelected ? 'border: 2px solid var(--tg-theme-button-color, #007aff);' : ''}">
                     <div class="word-header">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            ${selectionMode ? `<div class="checkbox ${isSelected ? 'checked' : ''}" onclick="toggleWordSelection(${word.id})" style="width: 24px; height: 24px; border: 2px solid ${isSelected ? 'var(--tg-theme-button-color, #007aff)' : '#ccc'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; ${isSelected ? 'background: var(--tg-theme-button-color, #007aff);' : ''}">${isSelected ? '✓' : ''}</div>` : ''}
+                            ${selectionMode ? `<div class="checkbox ${isSelected ? 'checked' : ''}" onclick="toggleWordSelection(${word.id})" style="width: 24px; height: 24px; border: 2px solid ${isSelected ? 'var(--tg-theme-button-color, #007aff)' : '#ccc'}; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; ${isSelected ? 'background: var(--tg-theme-button-color, #007aff); color: white;' : ''}">${isSelected ? '✓' : ''}</div>` : ''}
                             <span class="english">${word.english}</span>
                         </div>
                         <button class="delete-btn" onclick="deleteWord(${word.id})">🗑️</button>
@@ -310,6 +311,31 @@ async function bulkMoveWords(folderId) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ folder_id: folderId, user_id: userId })
             })
+        );
+    });
+    
+    await Promise.all(promises);
+    selectionMode = false;
+    selectedWords.clear();
+    loadDictionary();
+}
+
+function showBulkDeleteMenu() {
+    if (selectedWords.size === 0) {
+        alert('Выберите хотя бы одно слово');
+        return;
+    }
+    
+    if (!confirm(`Удалить ${selectedWords.size} слов(а)? Это действие нельзя отменить!`)) return;
+    
+    bulkDeleteWords();
+}
+
+async function bulkDeleteWords() {
+    const promises = [];
+    selectedWords.forEach(wordId => {
+        promises.push(
+            fetch(`${API_URL}/api/words/${wordId}?user_id=${userId}`, { method: 'DELETE' })
         );
     });
     
@@ -607,7 +633,6 @@ async function sendSaveWord(english, russian, comment) {
     const folderSelect = document.getElementById('word-folder');
     const folderId = folderSelect?.value || null;
     
-    // Сохраняем последнюю выбранную папку
     lastFolderId = folderId || '';
     localStorage.setItem('lastFolderId', lastFolderId);
     
@@ -633,7 +658,6 @@ async function savePhrasal() {
     
     if (!verb || !data) { alert('Заполни все поля'); return; }
     
-    // Сохраняем последнюю выбранную папку
     lastFolderId = folderId || '';
     localStorage.setItem('lastFolderId', lastFolderId);
     
