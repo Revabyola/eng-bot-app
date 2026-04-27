@@ -394,15 +394,6 @@ async function deleteFolder(folderId) {
 
 // ========== ДОБАВЛЕНИЕ ==========
 function showAddPage() {
-    let folderSelect = `
-        <div class="input-group">
-            <label>📁 Папка</label>
-            <select id="add-folder" style="width:100%; padding:16px; border-radius:16px; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color); border:1.5px solid rgba(0,0,0,0.08);">
-                <option value="">Без папки</option>
-    `;
-    allFolders.forEach(f => folderSelect += `<option value="${f.id}">${f.name}</option>`);
-    folderSelect += `</select></div>`;
-    
     content.innerHTML = `
         <h2>➕ Добавить</h2>
         <div class="tabs">
@@ -718,6 +709,14 @@ function showTestQuestion() {
     `;
     
     content.innerHTML = html;
+    
+    // 🔥 АВТОФОКУС — ГЛАВНОЕ ИСПРАВЛЕНИЕ
+    setTimeout(() => {
+        const input = document.getElementById('test-answer');
+        if (input) input.focus();
+    }, 150);
+    
+    // Обработка Enter
     document.getElementById('test-answer')?.addEventListener('keypress', e => { if (e.key === 'Enter') checkAnswer(); });
 }
 
