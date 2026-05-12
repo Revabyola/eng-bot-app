@@ -417,7 +417,6 @@ async function showRenameFolderForm(folderId) {
         <button class="button secondary" onclick="showFoldersPage()">🔙 Отмена</button>
     `;
     
-    // Enter = сохранить
     document.getElementById('rename-folder-name')?.addEventListener('keypress', e => {
         if (e.key === 'Enter') renameFolder(folderId);
     });
@@ -599,6 +598,11 @@ function renderAddForm(type) {
             <button class="button" onclick="translateAndAdd()">🔄 Перевести</button>
             <div id="translation-area"></div>
         `;
+        
+        // 🔥 ENTER = ПЕРЕВЕСТИ
+        document.getElementById('new-word')?.addEventListener('keypress', e => {
+            if (e.key === 'Enter') translateAndAdd();
+        });
     } else {
         container.innerHTML = `
             <div class="input-group">
@@ -661,7 +665,6 @@ function showCustomInput() {
         <button class="button" onclick="saveCustomWord('${word}')">💾 Сохранить</button>
     `;
     
-    // Enter = сохранить
     document.getElementById('custom-translation')?.addEventListener('keypress', e => {
         if (e.key === 'Enter') saveCustomWord(word);
     });
