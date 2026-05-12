@@ -653,7 +653,13 @@ async function translateAndAdd() {
 // ========== Enter = автосохранение ==========
 function showCustomInput() {
     const word = document.getElementById('new-word')?.value.trim();
-    document.getElementById('translation-area').innerHTML = `
+    if (!word) {
+        alert('Ошибка: слово не найдено');
+        return;
+    }
+    
+    const area = document.getElementById('translation-area');
+    area.innerHTML = `
         <div class="input-group">
             <label>🇷🇺 Перевод</label>
             <input type="text" id="custom-translation" placeholder="кот" autocomplete="off" autofocus>
@@ -662,9 +668,15 @@ function showCustomInput() {
             <label>💬 Комментарий</label>
             <input type="text" id="custom-comment" placeholder="Необязательно">
         </div>
-        <button class="button" onclick="saveCustomWord('${word}')">💾 Сохранить</button>
+        <button class="button" id="save-custom-btn">💾 Сохранить</button>
     `;
     
+    // Кнопка сохранить
+    document.getElementById('save-custom-btn')?.addEventListener('click', () => {
+        saveCustomWord(word);
+    });
+    
+    // Enter = сохранить
     document.getElementById('custom-translation')?.addEventListener('keypress', e => {
         if (e.key === 'Enter') saveCustomWord(word);
     });
