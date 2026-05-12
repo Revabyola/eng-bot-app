@@ -402,6 +402,46 @@ async function createFolder() {
     }
 }
 
+// ========== ПЕРЕИМЕНОВАНИЕ ПАПКИ (НОВОЕ) ==========
+async function showRenameFolderForm(folderId) {
+    const folder = allFolders.find(f => f.id == folderId);
+    if (!folder) return;
+    
+    content.innerHTML = `
+        <h2>✏️ Переименовать папку</h2>
+        <div class="input-group">
+            <label>Новое название</label>
+            <input type="text" id="rename-folder-name" value="${folder.name}" autocomplete="off" autofocus>
+        </div>
+        <button class="button" onclick="renameFolder(${folderId})">✅ Сохранить</button>
+        <button class="button secondary" onclick="showFoldersPage()">🔙 Отмена</button>
+    `;
+    
+    // Enter = сохранить
+    document.getElementById('rename-folder-name')?.addEventListener('keypress', e => {
+        if (e.key === 'Enter') renameFolder(folderId);
+    });
+}
+
+async function renameFolder(folderId) {
+    const newName = document.getElementById('rename-folder-name')?.value.trim();
+    if (!newName) { alert('Введи название'); return; }
+    
+    const res = await fetch(`${API_URL}/api/folders/${folderId}/rename`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName, user_id: userId })
+    });
+    const data = await res.json();
+    if (data.success) {
+        alert(`✅ Папка переименована в "${newName}"!`);
+        await loadFolders();
+        showFoldersPage();
+    } else {
+        alert('❌ Ошибка переименования');
+    }
+}
+
 async function showMoveWordMenu(wordId, english) {
     if (allFolders.length === 0) {
         alert('Сначала создайте папку');
@@ -496,9 +536,12 @@ function showFoldersPage() {
     } else {
         allFolders.forEach(folder => {
             html += `
-                <div class="word-card" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>📁 ${folder.name}</span>
-                    <button class="delete-btn" onclick="deleteFolder(${folder.id})">🗑️</button>
+                <div class="word-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <span style="flex: 1;">📁 ${folder.name}</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="button secondary small" style="width: auto;" onclick="showRenameFolderForm(${folder.id})">✏️</button>
+                        <button class="delete-btn" style="font-size: 18px;" onclick="deleteFolder(${folder.id})">🗑️</button>
+                    </div>
                 </div>
             `;
         });
@@ -603,12 +646,13 @@ async function translateAndAdd() {
     }
 }
 
+// ========== ИСПРАВЛЕНО: Enter = автосохранение ==========
 function showCustomInput() {
     const word = document.getElementById('new-word')?.value.trim();
     document.getElementById('translation-area').innerHTML = `
         <div class="input-group">
             <label>🇷🇺 Перевод</label>
-            <input type="text" id="custom-translation" placeholder="кот" autocomplete="off">
+            <input type="text" id="custom-translation" placeholder="кот" autocomplete="off" autofocus>
         </div>
         <div class="input-group">
             <label>💬 Комментарий</label>
@@ -616,6 +660,14 @@ function showCustomInput() {
         </div>
         <button class="button" onclick="saveCustomWord('${word}')">💾 Сохранить</button>
     `;
+    
+    // 🔥 ENTER = СОХРАНИТЬ
+    document.getElementById('custom-translation')?.addEventListener('keypress', e => {
+        if (e.key === 'Enter') saveCustomWord(word);
+    });
+    document.getElementById('custom-comment')?.addEventListener('keypress', e => {
+        if (e.key === 'Enter') saveCustomWord(word);
+    });
 }
 
 async function saveWord(english, russian) {
@@ -843,13 +895,13 @@ function showTestQuestion() {
     
     content.innerHTML = html;
     
-    // 🔥 АВТОФОКУС — ГЛАВНОЕ ИСПРАВЛЕНИЕ
+    // Автофокус
     setTimeout(() => {
         const input = document.getElementById('test-answer');
         if (input) input.focus();
     }, 150);
     
-    // Обработка Enter
+    // Enter = ответить
     document.getElementById('test-answer')?.addEventListener('keypress', e => { if (e.key === 'Enter') checkAnswer(); });
 }
 
