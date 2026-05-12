@@ -402,7 +402,7 @@ async function createFolder() {
     }
 }
 
-// ========== ПЕРЕИМЕНОВАНИЕ ПАПКИ (НОВОЕ) ==========
+// ========== ПЕРЕИМЕНОВАНИЕ ПАПКИ ==========
 async function showRenameFolderForm(folderId) {
     const folder = allFolders.find(f => f.id == folderId);
     if (!folder) return;
@@ -646,7 +646,7 @@ async function translateAndAdd() {
     }
 }
 
-// ========== ИСПРАВЛЕНО: Enter = автосохранение ==========
+// ========== Enter = автосохранение ==========
 function showCustomInput() {
     const word = document.getElementById('new-word')?.value.trim();
     document.getElementById('translation-area').innerHTML = `
@@ -661,7 +661,7 @@ function showCustomInput() {
         <button class="button" onclick="saveCustomWord('${word}')">💾 Сохранить</button>
     `;
     
-    // 🔥 ENTER = СОХРАНИТЬ
+    // Enter = сохранить
     document.getElementById('custom-translation')?.addEventListener('keypress', e => {
         if (e.key === 'Enter') saveCustomWord(word);
     });
@@ -895,13 +895,11 @@ function showTestQuestion() {
     
     content.innerHTML = html;
     
-    // Автофокус
     setTimeout(() => {
         const input = document.getElementById('test-answer');
         if (input) input.focus();
     }, 150);
     
-    // Enter = ответить
     document.getElementById('test-answer')?.addEventListener('keypress', e => { if (e.key === 'Enter') checkAnswer(); });
 }
 
